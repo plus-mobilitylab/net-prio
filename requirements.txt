@@ -1,0 +1,11 @@
+geopandas
+momepy < 1.0
+networkx==3.2.1
+rasterio
+pyogrio
+rasterstats
+contextily
+plotly
+python-kaleido
+matplotlib-scalebar
+psutil
