@@ -9,3 +9,4 @@ plotly
 python-kaleido
 matplotlib-scalebar
 psutil
+gdal

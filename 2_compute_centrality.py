@@ -40,7 +40,7 @@ compute_febc_for = []       # spatially filtered standard edge betweenness centr
 nws_febc = False
 compute_sbc_for = ["bp", "sp"]  # spatial betweenness centrality
 nws_sbc = True
-compute_pbc_for = ["bp"]        # population-weighted betweenness centrality
+compute_pbc_for = []        # population-weighted betweenness centrality
 nws_pbc = False
 
 bp_detour_factors = [4]       # detour factors to use for bikeable path centrality
