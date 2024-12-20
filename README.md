@@ -4,12 +4,15 @@ A method and software implementation for prioritizing road segments towards crea
 
 ## Method and implementation
 
-The method is described in the following scientific paper, which also contains several examples and result assessment:
-Werner, C., & Loidl, M. (2024). Creating coherent cycling networks: A spatial network science perspective *(submitted - will be updated soon)* [doi.org/10.5281/zenodo.13349332](https://doi.org/10.5281/zenodo.13349332)
+The method is described in the following paper, which also contains several examples and result assessment:
+Werner, C., & Loidl, M. (2024). Creating coherent cycling networks: A spatial network science perspective *(preprint - will be updated)* [doi.org/10.5281/zenodo.13349332](https://doi.org/10.5281/zenodo.13349332)
 
-The workflow is structured as follows:
-- `1_compute_weights.py`: Computes spatial (and optionally population-based) node weights. These weights are then used as input for centrality computation)
-- `2_compute_centrality.py`: Computes different variants of betweenness centrality (e.g. spatial betweenness centrality (SBC), population-weighted BC, standard edge BC)
+**Bikeability computation** is facilitated through the open source software **[NetAScore](http://github.com/plus-mobilitylab/netascore)** - see [Data section](#data). Details on the NetAScore software are provided in: Werner, C., Wendel, R., Kaziyeva, D., Stutz, P., van der Meer, L.,  Effertz, L., Zagel, B., & Loidl, M. (2024). NetAScore: An open and  extendible software for segment-scale bikeability and walkability. *Environment and Planning B: Urban Analytics and City Science*, 23998083241293177. https://doi.org/10.1177/23998083241293177
+
+**The workflow** is structured as follows:
+
+- `1_compute_weights.py`: Computes spatial (and optionally population-based) node weights. These weights are then used as input for centrality computation). The script has to be executed for each area of interest (NetAScore output file) - please set the variable `aoi_name` accordingly.
+- `2_compute_centrality.py`: Computes different variants of betweenness centrality (e.g. spatial betweenness centrality (SBC), population-weighted BC, standard edge BC). The script has to be executed for each area of interest (NetAScore output file) - please set the variable `aoi_name` accordingly.
 - `3_a1_aois.ipynb`: Assesses the spatial extents (AOIs) and generates an overview map. Further creates a GeoPackage file containing geometries for the full AOI extents as well as the edge-effect-free core areas.
 - `4_a2_plot_ba_and_c.ipynb`: Plots bikeability per AOI and importance/centrality results for the given centrality variants.
 - `5_a3_compute_ps.ipynb`: Computes Priority Scores (several variants) for the defined centrality columns, based on importance (centrality) and bikeability (segment suitability).
@@ -105,9 +108,12 @@ The following extensions are added to the spatially normalized betweenness centr
 
 In order to run the code provided in this repository, you need to provide the following files within the subdirectory `data_input`:
 
-- **input network**: the GeoPackage file output of [NetAScore](http://github.com/plus-mobilitylab/netascore)
+- **input road network**: the GeoPackage file output of [NetAScore](http://github.com/plus-mobilitylab/netascore)
 
-  - please **note**: For the recommended default settings (using `index_bike_incwalk`) please make sure to include the following lines in the NetAScore settings file (profiles section) to compute the bikeability index also for segments which are only accessible by foot:
+  - you may download the NetAScore output files used for the paper from Zenodo (https://doi.org/10.5281/zenodo.13336596) or compute bikeability using NetAScore for your own areas of interest
+
+  - please **note**: If you want to use your **own NetAScore outputs** with the recommended default settings (using `index_bike_incwalk`), please make sure to include the following lines in the NetAScore settings file (profiles section) to compute the bikeability index also for segments which are only accessible by foot:
+
     ```yaml
       -
         profile_name: bike_incwalk
@@ -116,11 +122,15 @@ In order to run the code provided in this repository, you need to provide the fo
         filter_access_walk: True
     ```
 
+  - NetAScore output files need to be placed within the `data_input` directory and file names should follow the default naming scheme - e.g. `netascore_salzburg.gpkg`
+
+  - If you use custom NetAScore outputs, please edit the settings per individual code file to refer to your set of areas of interest (`aoi_name` or  `aoi_names` variables)
+
 - *optional* - if you want to compute population-weighted centrality variants (PBC): provide population raster files in GeoTIFF format - e.g. [GHS-POP](https://human-settlement.emergency.copernicus.eu/download.php?ds=pop) - inside the subdirectory `data_input/population_raster`
 
 ## Output
 
-During execution of the Python scripts and Jupyter notebooks several result files and intermediate output files are generated. These are stored within the `data` sub-directory.
+During execution of the Python scripts and Jupyter notebooks several result files and intermediate output files are generated. These are stored within the `data` subdirectory.
 
 Furthermore, plots are added by the workflow to the `plots` subdirectory.
 
@@ -128,9 +138,11 @@ Regarding naming conventions for files and GeoPackage columns please refer to th
 
 ## References
 
-*Werner, C., & Loidl, M. (2024). Creating coherent cycling networks: A spatial network science perspective* *(submitted - will be updated soon)* [doi.org/10.5281/zenodo.13349332](https://doi.org/10.5281/zenodo.13349332)
+*Werner, C., & Loidl, M. (2024). Creating coherent cycling networks: A spatial network science perspective* *(preprint - will be updated)* [doi.org/10.5281/zenodo.13349332](https://doi.org/10.5281/zenodo.13349332)
 
 *Werner, C., & Loidl, M. (2023). Betweenness Centrality in Spatial Networks: A Spatially Normalised Approach.* *In R. Beecham, J. A. Long, D. Smith, Q. Zhao, & S. Wise (Eds.), 12th International Conference on Geographic Information Science (GIScience 2023) (Vol. 277, p. 83:1-83:6). Schloss Dagstuhl – Leibniz-Zentrum für Informatik.* [doi.org/10.4230/LIPIcs.GIScience.2023.83](https://doi.org/10.4230/LIPIcs.GIScience.2023.83)
+
+Werner, C., Wendel, R., Kaziyeva, D., Stutz, P., van der Meer, L.,  Effertz, L., Zagel, B., & Loidl, M. (2024). NetAScore: An open and  extendible software for segment-scale bikeability and walkability. *Environment and Planning B: Urban Analytics and City Science*, 23998083241293177. https://doi.org/10.1177/23998083241293177
 
 *Xiaohuan Wu, Wenpu Cao, Jianying Wang, Yi Zhang, Weijun Yang, and Yu Liu. A spatial interaction incorporated betweenness centrality measure. PLOS ONE, 17(5):e0268203, May 2022.* [doi.org/10.1371/journal.pone.0268203](https://doi.org/10.1371/journal.pone.0268203)
 
