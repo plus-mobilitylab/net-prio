@@ -5,7 +5,7 @@ import os.path
 import geopandas as gpd
 
 # settings
-aoi_name = "at_zs"
+aoi_name = "oslo"
 replace_existing = False
 
 # optional: if population-weighted centrality should be computed in later stages,
@@ -44,48 +44,63 @@ if not os.path.exists(os.path.join("plots", "svg")):
 edges, nodes, g = nh.get_net_from_file(f_network, mode, access)
 
 # load polygons for filtering spatial weights (urban areas etc.)
+print("loading data...")
 aoi = nh.get_aoi(edges, buffer=100)
 bbox = nh.transform_geom(aoi, edges.crs).bounds
 nh.get_osm_data_qfile("overpass_area_query.txt", bbox, f_osm_poly, replace_existing)
 polys = gpd.read_file(f_osm_poly, layer="multipolygons", columns=["osm_id"])
+print("transforming OSM polygons...")
 dest_poly = nh.transform_geom(polys.union_all(), 4326, edges.crs, inv_xy=True)
+#dest_poly = polys.to_crs(edges.crs)
 #display(dest_poly)
 obj = {
     "type": ["urban"],
     "geometry": [dest_poly],
     "weight_factor": [1]
 }
-poly_df = gpd.GeoDataFrame.from_dict(obj, crs=edges.crs)
+poly_df = gpd.GeoDataFrame.from_dict(obj, crs=edges.crs).explode()
 
 # tessellation and weight polygons
+print("tessellation:")
 if replace_existing or not os.path.exists(f_tessellation):
+    print("  executing tessellation...")
     tess = nh.tessellate(edges, limit=aoi, out_file=f_tessellation, segment_dist=TESS_SEG_DIST)
 else:
+    print("  loading existing tessellation result...")
     tess = gpd.read_file(f_tessellation)
-
+print("generating spatial index on tessellation polygons...")
+tess.sindex
+print("executing overlay function...")
 weight_polygons = gpd.overlay(tess, poly_df)
+print("assigning area...")
 weight_polygons["area"] = weight_polygons.geometry.area
+print("setting index...")
 weight_polygons.set_index("edge_id", inplace=True)
+# save temporary output (overlay result)
+weight_polygons.to_file(os.path.join("data", "weight_polygons.gpkg"))
 
 # plotting result
-import matplotlib.pyplot as plt
-print(f"Plotting intersected tessellation result")
-plt.rcParams["figure.figsize"] = (20,20)
-ax = weight_polygons.boundary.plot(edgecolor="red", lw=0.5)
-ax = edges.plot(ax=ax, lw=0.3)
-ax = nodes.plot(ax=ax, markersize=0.1)
-plt.margins(0)
-plt.axis('off')
-plt.savefig(fname=f"plots/tessel_{aoi_name}.pdf", bbox_inches='tight')
+#import matplotlib.pyplot as plt
+#print(f"Plotting intersected tessellation result")
+#plt.rcParams["figure.figsize"] = (20,20)
+#ax = weight_polygons.boundary.plot(edgecolor="red", lw=0.5)
+#ax = edges.plot(ax=ax, lw=0.3)
+#ax = nodes.plot(ax=ax, markersize=0.1)
+#plt.margins(0)
+#plt.axis('off')
+#plt.savefig(fname=f"plots/tessel_{aoi_name}.pdf", bbox_inches='tight')
 
+print("adding node weights...")
 nodes_weight = nh.add_node_weights(nodes, edges, weight_polygons, weight_col="area", 
                 output_col="w_spatial",
                 output_file= None if generate_population_weights else f_nodes_weight)
 
 if generate_population_weights:
+    print("starting generation of population weights")
     # alternative weighting approach: use population data instead of spatial-weighted with polygon filter
     dir_popraster = os.path.join(dir_data_in, "population_raster") 
     tess = nh.add_population(tess, dir_popraster, out_file=os.path.join(dir_data, f"tess_pop_{aoi_name}.gpkg"))
+    print("adding node weights...")
     nodes_weight = nh.add_node_weights(nodes_weight, edges, tess.set_index("edge_id"), 
                                        weight_col="population", output_col="w_pop",
                                        output_file=f_nodes_weight)
